@@ -1,0 +1,29 @@
+CEK Grammar:
+
+  <input> ::= <expr>
+
+  <expr> ::=  <prim-op>
+           | <application>
+           | <value>
+           | <set>
+
+  <set> ::= "(set " <variable> " " <expr> ")"
+
+  <variable> ::= '([a-z] | [A-Z])+'
+
+  <function> ::= "(lambda " <variable> " . " <expr> ")"
+
+  <application> ::= "(" <expr> " . " <expr> ")"
+
+  <primitive> ::= Real Numbers
+
+  <prim-op> ::= "(add1 " <expr>+ ")"
+              | "(sub1 " <expr>+ ")"
+              | "(- " <expr>+ ")"
+              | "(* " <expr>+ ")"
+              | "(^ " <expr>+ ")"
+              | "(isZero " <expr> ")"
+
+  <value> ::= <variable>
+            | <function>
+            | <primitive>
