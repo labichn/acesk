@@ -1,4 +1,4 @@
-package dvh.cek
+package dvh.acesk
 
 import org.scalatest.FunSuite
 
@@ -70,38 +70,7 @@ class TestSuite extends FunSuite {
 
   test("evaluating values") {
     assert(eval(parse(pri1)) === Set((Closure(Con(0), EmptyEnv), EmptyStore, EmptyKon)))
-  }
-
-/*  test("evaluating expressions") {
-    assert(eval(parse("("+fun1+" "+pri1+")")) === Con(0))
-    assert(eval(parse("(isZero ((λ x . x) 0))")) === Fun(Var('x), Fun(Var('y), Var('x))))
-    assert(eval(parse("(isZero (- 5 (+ 5 ((lambda x . x) 0))))")) === Fun(Var('x), Fun(Var('y), Var('x))))
-    assert(eval(parse("(isZero (* 42 ((λ x . x) (- 6 5))))")) === Fun(Var('x), Fun(Var('y), Var('y))))
-    assert(eval(parse("("+fun4+" 0)")) === Con(1))
-    assert(eval(parse("("+fun4+" 1)")) === Con(0))
-    assert(eval(parse("("+fun5+" 0)")) === Con(1))
-    assert(eval(parse("("+fun5+" 1)")) === Con(0))
-    assert(eval(parse("(if0 0 1 2)")) === Con(1))
-    assert(eval(parse("(if0 1 1 2)")) === Con(2))
-  }
-
-  test("variable scoping") {
-    assert(eval(parse("((λx.((λx.(+ x 1)) (+ x 1))) 0)")) === Con(2))
-    assert(eval(parse("((λx.((λx.((λx.(+ x 1)) (+ x 1))) (+ x 1))) 0)")) === Con(3))
-  }
-
-  test("evaluating booleans") {
-    val falsuh: String = "(λx y.y)"
-    val tuhrue: String = "(λx y.x)"
-    val ifthunk: String = "(λp t e.p t e 0)"
-    val and: String = "(λx y.x y "+falsuh+")"
-    val or: String = "(λx y.x "+tuhrue+" y)"
-    val not: String = "(λx.x "+falsuh+" "+tuhrue+")"
-    assert(parse("(λp t e.p t e 0)") === Fun(Var('p), Fun(Var('t), Fun(Var('e), App(App(App(Var('p), Var('t)), Var('e)), Con(0))))))
-    assert(parse("(λx y.y)") === Fun(Var('x), Fun(Var('y), Var('y))))
-    assert(eval(parse("((λp t e.p t e 0) (λx y.x) (λx.0) (λx.1))")) === Con(0))
-    assert(eval(parse("("+ifthunk+" "+falsuh+" (λx.0) (λx.1))")) === Con(1))
-    assert(eval(parse("("+ifthunk+" ("+not+" "+falsuh+") (λx.0) (λx.1))")) === Con(0))
+    assert(eval(parse(pri2)) === Set((Closure(Con(42), EmptyEnv), EmptyStore, EmptyKon)))
   }
 
   test("parsing letrec") {
@@ -109,61 +78,53 @@ class TestSuite extends FunSuite {
     assert(parse("(letrec [(x 0)(y 1)] x)") === Letrec(List((Var('x), Con(0)), (Var('y), Con(1))), Var('x)))
   }
 
-  test("evaluating set and letrec") {
-    val falsuh: String = "(λx y.y)"
-    val tuhrue: String = "(λx y.x)"
-    val ifthunk: String = "(λp t e.p t e 0)"
-    val and: String = "(λx y.x y "+falsuh+")"
-    val or: String = "(λx y.x "+tuhrue+" y)"
-    val not: String = "(λx.x "+falsuh+" "+tuhrue+")"
-    val fact: String =
-      "(λn.ifthunk (isZero n) "+
-                  "(λx.1) "+
-                  "(λx.(* n (fact (- n 1)))))"
-    val oddP: String =
-      "(λn.ifthunk (isZero n) "+
-                  "(λx.false) "+
-                  "(λx.evenP (- n 1)))"
-    val evenP: String =
-      "(λn.ifthunk (isZero n) "+
-                  "(λx.true) "+
-                  "(λx.oddP (- n 1)))"
+  test("evaluating if0") {
+    val k0 = EmptyKon
+    val k1 = If(EmptyEnv, Con(1), Con(2), Location(0))
+    val s0 = EmptyStore
+    val s1 = ConsStore(Location(0), Set(k0), s0)
+    assert(eval(parse("(if0 0 1 2)")) ===
+      Set((Closure(IfZero(Con(0), Con(1), Con(2)), EmptyEnv), s0, k0),
+          (Closure(Con(0), EmptyEnv), s1, k1),
+          (Closure(Con(1), EmptyEnv), s1, k0)))
+    val s2 = ConsStore(Location(1), Set(k1), s1)
+    val k2 = Op(Ops.Add1, Nil, Nil, Location(1))
+    assert(eval(parse("(if0 (add1 0) 1 2)")) ===
+      Set((Closure(IfZero(Oper(Ops.Add1, List(Con(0))), Con(1), Con(2)), EmptyEnv), s0, k0),
+          (Closure(Oper(Ops.Add1, List(Con(0))), EmptyEnv), s1, k1),
+          (Closure(Con(0), EmptyEnv), s2, k2),
+          (Closure(Num, EmptyEnv), s2, k1),
+          (Closure(Con(1), EmptyEnv), s2, k0),
+          (Closure(Con(2), EmptyEnv), s2, k0)))
+  }
+
+  test("mutual") {
     val mutual =
       """
 (letrec [(true (λx y.x))
          (false (λx y.y))
-         (ifthunk (λp t e.p t e 0))
          (and (λx y.x y false))
          (or (λx y.x true y))
          (not (λx.x false true))
-         (evenP (λn.ifthunk (isZero n) (λx.true) (λx.oddP (- n 1))))
-         (oddP (λn.ifthunk (isZero n) (λx.false) (λx.evenP (- n 1))))]
-  (oddP 21))
+         (evenP (λn.(if0 n true (oddP (- n 1)))))
+         (oddP (λn.(if0 n false (evenP (- n 1)))))]
+  (oddP 1))
 """
-    assert(eval(parse(mutual)) === parse("(λx y.x)"))
-    val test: String =
-      "(letrec [(true "+tuhrue+")"+
-               "(false "+falsuh+")"+
-               "(ifthunk "+ifthunk+")"+
-               "(and "+and+")"+
-               "(or "+or+")"+
-               "(not "+not+")"+
-               "(fact "+fact+")"+
-               "(oddP "+oddP+")"+
-               "(evenP "+evenP+")] "+
-        "(ifthunk (evenP 8) "+
-                 "(λx.fact 4) "+
-                 "(λx.fact 3)))"
-    assert(eval(parse("("+ifthunk+" ("+not+" ("+and+" "+tuhrue+" "+tuhrue+")) (λx.1) (λx.10))")) === parse("10"))
-    assert(eval(parse(test)) === Con(24))
-    assert(eval(parse("((λx.((λy.x) (set x (+ x 1)))) 12)")) === Con(13))
-    assert(eval(parse("(letrec {(x 0) "+
-                               "(y (λx.x))} "+
-                        "(y x))")) === Con(0))
-    assert(eval(parse("(letrec {(x 0) "+
-                               "(y (λx.x)) "+
-                               "(z (+ x 3))} "+
-                        "(y z))")) === Con(3))
-  }*/
+    assert(eval(parse(mutual)) === parse("(lambda x y.x)"))
+  }
             
 }
+/*
+(<(add1 0) ∅>,<function1>,if(1, 2, [0]))
+(<2 ∅>,<function1>,mt)
+(<0 ∅>,<function1>,op(add1, (), (), κ))
+(<(if0 (add1 0) 1 2) ∅>,mt,mt)
+(<allyournumarebelongtous ∅>,<function1>,if(1, 2, [0])
+
+(<(add1 0) ∅>,<function1>,if(1, 2, [0]))
+(<2 ∅>,<function1>,if(1, 2, [0]))
+(<0 ∅>,<function1>,op(add1, (), (), κ))
+(<1 ∅>,<function1>,if(1, 2, [0]))
+(<(if0 (add1 0) 1 2) ∅>,mt,mt)
+(<allyournumarebelongtous ∅>,<function1>,if(1, 2, [0])))
+*/

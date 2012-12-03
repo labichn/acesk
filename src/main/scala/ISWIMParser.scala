@@ -1,7 +1,7 @@
-package dvh.cek
+package dvh.acesk
 
 import scala.util.parsing.combinator._
-import dvh.cek.Ops._
+import dvh.acesk.Ops._
 
 object ISWIMParser extends JavaTokenParsers {
 

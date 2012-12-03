@@ -1,3 +1,5 @@
-package dvh.cek
+package dvh.acesk
 
-trait Storable
+trait Storable {
+  def ll: List[Location]
+}

@@ -1,4 +1,4 @@
-package dvh.cek
+package dvh.acesk
 
 trait Store extends Function1[Location, Set[Storable]] {
   def alloc(l: Location): Store

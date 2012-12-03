@@ -1,12 +1,12 @@
 import sbt._
 import sbt.Keys._
 
-object PresenceBuild extends Build {
+object ACESKBuild extends Build {
   import Dependencies._
   import Settings._
 
-  lazy val cek = Project(
-    id = "cek",
+  lazy val acesk = Project(
+    id = "acesk",
     base = file("."),
     settings = buildSettings ++ Seq(libraryDependencies ++= commonDependencies)
   )
@@ -36,7 +36,7 @@ object Settings {
   import Dependencies._
   import Resolvers._
 
-  lazy val projectName = "cek"
+  lazy val projectName = "acesk"
 
   lazy val buildOrg = "labichn"
   lazy val buildVersion = "0.0.1"
