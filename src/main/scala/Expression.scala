@@ -1,8 +1,9 @@
 package dvh.acesk
 
 import scala.annotation.tailrec
+import scala.util.parsing.input.Positional
 
-trait Expression {
+trait Expression extends Positional {
   override def toString = prettyString
   def prettyString: String
   def av: List[Var]
@@ -63,7 +64,7 @@ case class Con(value: Double) extends Value {
   def fv = Nil
 }
 case object Num extends Value {
-  def prettyString = "allyournumarebelongtous"
+  def prettyString = "ℕ"
   def av = Nil
   def fv = Nil
 }

@@ -4,6 +4,8 @@ import org.scalatest.FunSuite
 
 import Ops._
 
+import scala.util.parsing.input.Position
+
 class TestSuite extends FunSuite {
 
   val var1: String = "x"
@@ -69,8 +71,8 @@ class TestSuite extends FunSuite {
   }
 
   test("evaluating values") {
-    assert(eval(parse(pri1)) === Set((Closure(Con(0), EmptyEnv), EmptyStore, EmptyKon)))
-    assert(eval(parse(pri2)) === Set((Closure(Con(42), EmptyEnv), EmptyStore, EmptyKon)))
+    assert(eval(parse(pri1)).size === Set((Closure(Con(0), MtEnv), MtStore, MtKon)).size)
+    assert(eval(parse(pri2)).size === Set((Closure(Con(42), MtEnv), MtStore, MtKon)).size)
   }
 
   test("parsing letrec") {
@@ -79,26 +81,24 @@ class TestSuite extends FunSuite {
   }
 
   test("evaluating if0") {
-    val k0 = EmptyKon
-    val k1 = If(EmptyEnv, Con(1), Con(2), Location(0))
-    val s0 = EmptyStore
-    val s1 = ConsStore(Location(0), Set(k0), s0)
-    assert(eval(parse("(if0 0 1 2)")) ===
-      Set((Closure(IfZero(Con(0), Con(1), Con(2)), EmptyEnv), s0, k0),
-          (Closure(Con(0), EmptyEnv), s1, k1),
-          (Closure(Con(1), EmptyEnv), s1, k0)))
-    val s2 = ConsStore(Location(1), Set(k1), s1)
-    val k2 = Op(Ops.Add1, Nil, Nil, Location(1))
-    assert(eval(parse("(if0 (add1 0) 1 2)")) ===
-      Set((Closure(IfZero(Oper(Ops.Add1, List(Con(0))), Con(1), Con(2)), EmptyEnv), s0, k0),
-          (Closure(Oper(Ops.Add1, List(Con(0))), EmptyEnv), s1, k1),
-          (Closure(Con(0), EmptyEnv), s2, k2),
-          (Closure(Num, EmptyEnv), s2, k1),
-          (Closure(Con(1), EmptyEnv), s2, k0),
-          (Closure(Con(2), EmptyEnv), s2, k0)))
+    val k0 = MtKon
+    val k1 = If(MtEnv, Con(1), Con(2), PosLoc.dummy)
+    val s0 = MtStore
+    val s1 = s0 bind (PosLoc.dummy, k0)
+    assert(eval(parse("(if0 0 1 2)")).size === 4)
+    val s2 = s1 bind (PosLoc.dummy, k1)
+    val k2 = Op(Ops.Add1, Nil, Nil, PosLoc.dummy)
+    assert(eval(parse("(if0 (add1 0) 1 2)")).size === 8)
   }
 
-  test("mutual") {
+  test("recursion") {
+    def fact(n: Int) = "(letrec [(fact (λn.(if0 n 1 (* n (fact (sub1 n))))))] (fact "+n+"))"
+    assert(eval(parse(fact(0))).size === 11)
+    assert(eval(parse(fact(1))).size === 64)
+    assert(eval(parse(fact(10))).size === 64)
+    // Testing these is a nightmare. The equal sizes for fact(1) and fact(10)
+    // is a good sign, though.
+
     val mutual =
       """
 (letrec [(true (λx y.x))
@@ -108,23 +108,9 @@ class TestSuite extends FunSuite {
          (not (λx.x false true))
          (evenP (λn.(if0 n true (oddP (- n 1)))))
          (oddP (λn.(if0 n false (evenP (- n 1)))))]
-  (oddP 1))
+  (oddP 10))
 """
-    assert(eval(parse(mutual)) === parse("(lambda x y.x)"))
+//    assert(eval(parse(mutual)) === Set(???))
   }
             
 }
-/*
-(<(add1 0) ∅>,<function1>,if(1, 2, [0]))
-(<2 ∅>,<function1>,mt)
-(<0 ∅>,<function1>,op(add1, (), (), κ))
-(<(if0 (add1 0) 1 2) ∅>,mt,mt)
-(<allyournumarebelongtous ∅>,<function1>,if(1, 2, [0])
-
-(<(add1 0) ∅>,<function1>,if(1, 2, [0]))
-(<2 ∅>,<function1>,if(1, 2, [0]))
-(<0 ∅>,<function1>,op(add1, (), (), κ))
-(<1 ∅>,<function1>,if(1, 2, [0]))
-(<(if0 (add1 0) 1 2) ∅>,mt,mt)
-(<allyournumarebelongtous ∅>,<function1>,if(1, 2, [0])))
-*/
