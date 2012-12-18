@@ -57,7 +57,7 @@ package object acesk {
   }
   private val bind: Bind = (ρ, σ, x, v, cn, lb) => {
     val l = x.name+lb
-    (ρ bind (x, l), σ bind (l, v), cn)
+    (ρ bind (x, l), σ bind (l, v), cn+1)
   }
   private val alloc: Alloc = (ρ, σ, x, cn, lb) => {
     val l = x.name+lb

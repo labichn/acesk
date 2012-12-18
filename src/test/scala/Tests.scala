@@ -104,8 +104,8 @@ class TestSuite extends FunSuite {
     val ans0 = ansFilter(set0)
     assert(set0.size === 15)
     assert(ans0.size === 1)
-    assert(analyze(parse(fact(1))).size === 50)
-    assert(analyze(parse(fact(10))).size === 50)
+    assert(analyze(parse(fact(1))).size === 53)
+    assert(analyze(parse(fact(10))).size === 53)
     // Testing these is a nightmare. The equal sizes for fact(1) and fact(10)
     // is a good sign, though.
 
@@ -121,8 +121,8 @@ class TestSuite extends FunSuite {
   (oddP """+n+"""))
 """
     assert(analyze(parse(mutual(0))).size === 27)
-    assert(analyze(parse(mutual(1))).size === 82)
-    assert(analyze(parse(mutual(10))).size === 82)
+    assert(analyze(parse(mutual(1))).size === 92)
+    assert(analyze(parse(mutual(10))).size === 92)
   }
             
 }
