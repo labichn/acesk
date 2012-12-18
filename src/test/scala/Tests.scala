@@ -87,7 +87,7 @@ class TestSuite extends FunSuite {
   def ansFilter(s: Set[State]) =
     s.filter(_ match { case Ans(_, _) => true case _ => false })
 
-  test("analizing if0") {
+  test("analyzing if0") {
     val set0 = analyze(parse("(if0 0 1 2)"))
     val ans0 = ansFilter(set0)
     assert(set0.size === 6)

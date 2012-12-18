@@ -23,15 +23,10 @@ package object acesk {
 
   type Addr = String
   type Contour = Int
-  type CN = Contour => Contour
   type Label = Position
   type Push = (Store, Kontinuation, Contour, Label) => (Addr, Store)
-  // A Bind function binds a variable to either a value or kont, returning
-  // a new contour, environment, and store.
   type Bind = (Environment, Store, Var, Storable, Contour, Label) => (Environment, Store, Contour)
-  // Added to handle letrec, which will creates a new countour for each clause.
   type Alloc = (Environment, Store, Var, Contour, Label) => (Addr, Environment, Store)
-  val k = 10 // enough to keep addrs unique for any label/contour pair
 
   def analyze(m: Expression): Set[State] = {
     val d = false
