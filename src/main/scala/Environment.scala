@@ -1,33 +1,24 @@
 package dvh.acesk
 
-trait Environment[T <: Location, U <: Environment[T, U]] extends Function1[Var, T] {
-  def bind(v: Var, l: T): U
-  def domain: List[Var] = Nil
-  def range: List[T] = Nil
-  def ll: List[T]
-}
+import scala.collection.immutable.HashMap
 
-trait PosEnv extends Environment[PosLoc, PosEnv] {
-  def bind(v: Var, l: PosLoc): PosEnv = ConsEnv(v, l, this)
-  def ll: List[PosLoc]
-}
-
-case object MtEnv extends PosEnv {
-  def apply(v1: Var) =
-    throw new RuntimeException("The variable " + v1.name + " is not in the environment.")
-  override def toString = "∅"
-  def ll = Nil
-}
-
-case class ConsEnv(v: Var, l: PosLoc, e: PosEnv) extends PosEnv {
-  def apply(v1: Var) = if (v.name == v1.name) l else e(v1)
-  override def domain = v::e.domain
-  override def range = l::e.range
-  override def toString = toString(this, "ρ{")
-  def toString(e1: PosEnv, a: String): String = e1 match {
-    case ConsEnv(v1, l1, e2) =>
-      toString(e2, a+"("+v1+" -> "+l1+") ")
-    case MtEnv => a.substring(0, a.length-1) + "}"
-  }
+class Environment(val map: Map[Var, Addr]) extends Function1[Var, Addr] {
+  def apply(v: Var) = map(v)
+  def bind(v: Var, l: Addr) = new Environment(map + ((v, l)))
+  def contains(v: Var) = map contains v
+  def domain = (map keys).toList
+  def range = (map values).toList
   def ll = range
+  override def toString =
+    "Env: {"+(map.toList.foldLeft("}")((a, n)=> n match {
+        case (k, v) => ", "+k+" -> "+v+a
+    }).substring(2))
+  override def equals(that: Any) = that match {
+    case e: Environment => map == e.map
+    case _ => false
+  }
+  override def hashCode = map.hashCode
+}
+object MtEnv extends Environment(new HashMap[Var, Addr]) {
+  override def toString = "Env: {}"
 }

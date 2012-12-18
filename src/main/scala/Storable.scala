@@ -1,5 +1,5 @@
 package dvh.acesk
 
-trait Storable[T <: Location] {
-  def ll: List[T]
+trait Storable {
+  def ll: List[Addr]
 }

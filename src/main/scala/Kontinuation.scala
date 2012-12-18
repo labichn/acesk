@@ -2,9 +2,10 @@ package dvh.acesk
 
 import Ops._
 
-trait Kontinuation extends Storable[PosLoc] {
-  val sep = ", "
-  def ll: List[PosLoc]
+import scala.util.parsing.input.Position
+
+trait Kontinuation extends Storable {
+  protected val sep = ", "
   protected def toString(l: List[_]): String = toString(l, "(")
   protected def toString(l: List[_], a: String): String = l match {
     case x::xs => toString(xs, a+x+sep)
@@ -15,41 +16,48 @@ trait Kontinuation extends Storable[PosLoc] {
         a+")"
   }
 }
-case object MtKon extends Kontinuation {
+
+case object MtKont extends Kontinuation {
+  val cn: Contour = 0
   override def toString = "mt"
   def ll = Nil
 }
-case class Fn(v: Closure, a: PosLoc) extends Kontinuation {
-  override def toString = "fn("+v+sep+"κ)"
-  def ll = a::v.ll
+case class Fn(v: Storable, a: Addr, cn: Contour, lb: Label) extends Kontinuation {
+  override def toString = "fn("+v+sep+a+")"
+  def ll = List(a)
 }
-case class Ar(c: Closure, a: PosLoc) extends Kontinuation {
-  override def toString = "ar("+c+sep+"κ)"
-  def ll = a::c.ll
+case class Ar(e: Expression, env: Environment, a: Addr, cn: Contour, lb: Label) extends Kontinuation {
+  override def toString = "ar("+e+sep+env+a+")"
+  def ll = a::env.ll
 }
-case class If(env: PosEnv, t: Expression, e: Expression, a: PosLoc) extends Kontinuation {
+case class Fi(t: Expression, e: Expression, env: Environment, a: Addr, cn: Contour) extends Kontinuation {
   override def toString = "if("+t+", "+e+", "+a+")"
   def ll = a::env.ll
 }
 case class Op(op: Ops,
-              vs: List[Closure],
-              cs: List[Closure],
-              a: PosLoc) extends Kontinuation {
+                 vs: List[Storable],
+                 ms: List[Expression],
+                 e: Environment,
+                 a: Addr,
+                 cn: Contour,
+                 lb: Label) extends Kontinuation {
   override def toString =
-    "op("+Ops.toString(op)+", "+toString(vs)+sep+toString(cs)+", "+a+")"
-  def ll = a::vs.flatMap(_.ll):::cs.flatMap(_.ll)
+    "op("+Ops.toString(op)+sep+toString(vs)+sep+toString(ms)+sep+e+sep+a+")"
+  def ll = a::vs.flatMap(_.ll):::e.ll
 }
-case class St(l: PosLoc, a: PosLoc) extends Kontinuation {
+case class St(l: Addr, a: Addr, cn: Contour, lb: Label) extends Kontinuation {
   override def toString = "st("+l+sep+a+")"
   def ll = List(l, a)
 }
 case class Lr(xs: List[Var],
-              vvs: List[(Var, Value)],
-              ms: List[Expression],
-              e: PosEnv,
-              n: Expression,
-              a: PosLoc) extends Kontinuation {
+                 vvs: List[(Var, Storable)],
+                 ms: List[Expression],
+                 env: Environment,
+                 n: Expression,
+                 a: Addr,
+                 cn: Contour,
+                 lb: Label) extends Kontinuation {
   override def toString =
-    "lr("+toString(xs)+sep+toString(vvs)+sep+toString(ms)+sep+e+sep+n+sep+a+")"
-  def ll = a::e.ll
+    "lr("+toString(xs)+sep+toString(vvs)+sep+toString(ms)+sep+env+sep+n+sep+a+")"
+  def ll = a::env.ll
 }

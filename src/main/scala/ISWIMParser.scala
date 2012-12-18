@@ -8,7 +8,7 @@ object ISWIMParser extends JavaTokenParsers {
   override def skipWhitespace = true
 
   def expr: Parser[Expression] =
-    positioned(letrec | if0 | value | set | oper | variable | app)
+    positioned(letrec | if0 | con | lam | set | oper | variable | app)
 
   def oparen: Parser[String] = "(" | "[" | "{"
   def cparen: Parser[String] = ")" | "]" | "}"
@@ -46,15 +46,13 @@ object ISWIMParser extends JavaTokenParsers {
       case _ ~ o ~ ms ~ _ => Oper(o, ms)
     })
   
-  def value: Parser[Value] = fun | con
-  
-  def variable: Parser[Var] = positioned(ident ^^ { x => Var(Symbol(x)) })
+  def variable: Parser[Var] = positioned(ident ^^ { x => Var(x) })
   
   // AMIRITE??
-  def fun: Parser[Fun] =
+  def lam: Parser[Lam] =
     positioned(oparen ~ ("lambda" | "λ") ~ rep1(variable) ~ "." ~ rep1(expr) ~ cparen ^^ {
       case _ ~ _ ~ vs ~ _ ~ (m::ms) ~ _ => vs match {
-        case w::ws => Fun(w, ws.foldRight(appLeft(m, ms))((y, n) => Fun(y, n)))
+        case w::ws => Lam(w, ws.foldRight(appLeft(m, ms))((y, n) => Lam(y, n)))
         case _ => throw new RuntimeException("Will not create a function " +
                                              "without any parameters.")
       }

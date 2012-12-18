@@ -70,9 +70,9 @@ class TestSuite extends FunSuite {
     assert(parse(pop3) === Oper(Sub, List(Con(42), Con(0))))
   }
 
-  test("evaluating values") {
-    assert(eval(parse(pri1)).size === Set((Closure(Con(0), MtEnv), MtStore, MtKon)).size)
-    assert(eval(parse(pri2)).size === Set((Closure(Con(42), MtEnv), MtStore, MtKon)).size)
+  test("analyzeuating values") {
+    assert(analyze(parse(pri1)).size === Set((Closure(Con(0), MtEnv), MtStore, MtKon)).size)
+    assert(analyze(parse(pri2)).size === Set((Closure(Con(42), MtEnv), MtStore, MtKon)).size)
   }
 
   test("parsing letrec") {
@@ -80,22 +80,22 @@ class TestSuite extends FunSuite {
     assert(parse("(letrec [(x 0)(y 1)] x)") === Letrec(List((Var('x), Con(0)), (Var('y), Con(1))), Var('x)))
   }
 
-  test("evaluating if0") {
+  test("analzing if0") {
     val k0 = MtKon
     val k1 = If(MtEnv, Con(1), Con(2), PosLoc.dummy)
     val s0 = MtStore
     val s1 = s0 bind (PosLoc.dummy, k0)
-    assert(eval(parse("(if0 0 1 2)")).size === 4)
+    assert(analyze(parse("(if0 0 1 2)")).size === 3)
     val s2 = s1 bind (PosLoc.dummy, k1)
     val k2 = Op(Ops.Add1, Nil, Nil, PosLoc.dummy)
-    assert(eval(parse("(if0 (add1 0) 1 2)")).size === 8)
+    assert(analyze(parse("(if0 (add1 0) 1 2)")).size === 6)
   }
 
   test("recursion") {
     def fact(n: Int) = "(letrec [(fact (λn.(if0 n 1 (* n (fact (sub1 n))))))] (fact "+n+"))"
-    assert(eval(parse(fact(0))).size === 11)
-    assert(eval(parse(fact(1))).size === 64)
-    assert(eval(parse(fact(10))).size === 64)
+    assert(analyze(parse(fact(0))).size === 10)
+    assert(analyze(parse(fact(1))).size === 154)
+    assert(analyze(parse(fact(10))).size === 154)
     // Testing these is a nightmare. The equal sizes for fact(1) and fact(10)
     // is a good sign, though.
 
