@@ -35,17 +35,17 @@ class TestSuite extends FunSuite {
   }
 
   test("parsing variables") {
-    assert(parse(var1) === Var('x))
-    assert(parse(var2) === Var('y))
-    assert(parse(var3) === Var('z))
-    assert(parse(var4) === Var('adamalix))
+    assert(parse(var1) === Var("x"))
+    assert(parse(var2) === Var("y"))
+    assert(parse(var3) === Var("z"))
+    assert(parse(var4) === Var("adamalix"))
   }
 
 
   test("parsing functions") {
-    assert(parse(fun1) === Fun(Var('x), Var('x)))
-    assert(parse(fun2) === Fun(Var('x), Fun(Var('y), Var('x))))
-    assert(parse(fun3) === Fun(Var('foo), Fun(Var('bar), Var('bar))))
+    assert(parse(fun1) === Lam(Var("x"), Var("x")))
+    assert(parse(fun2) === Lam(Var("x"), Lam(Var("y"), Var("x"))))
+    assert(parse(fun3) === Lam(Var("foo"), Lam(Var("bar"), Var("bar"))))
     assert(parse(fun4) === parse(fun5))
   }
 
@@ -70,36 +70,46 @@ class TestSuite extends FunSuite {
     assert(parse(pop3) === Oper(Sub, List(Con(42), Con(0))))
   }
 
-  test("analyzeuating values") {
-    assert(analyze(parse(pri1)).size === Set((Closure(Con(0), MtEnv), MtStore, MtKon)).size)
-    assert(analyze(parse(pri2)).size === Set((Closure(Con(42), MtEnv), MtStore, MtKon)).size)
-  }
-
   test("parsing letrec") {
-    assert(parse("(letrec [(x 0)] x)") === Letrec(List((Var('x), Con(0))), Var('x)))
-    assert(parse("(letrec [(x 0)(y 1)] x)") === Letrec(List((Var('x), Con(0)), (Var('y), Con(1))), Var('x)))
+    assert(parse("(letrec [(x 0)] x)") === Letrec(List((Var("x"), Con(0))), Var("x")))
+    assert(parse("(letrec [(x 0)(y 1)] x)") === Letrec(List((Var("x"), Con(0)), (Var("y"), Con(1))), Var("x")))
+  }
+  object dummy extends Position {
+    def line = -1; def column = -1
+    protected def lineContents = ""
   }
 
-  test("analzing if0") {
-    val k0 = MtKon
-    val k1 = If(MtEnv, Con(1), Con(2), PosLoc.dummy)
-    val s0 = MtStore
-    val s1 = s0 bind (PosLoc.dummy, k0)
-    assert(analyze(parse("(if0 0 1 2)")).size === 3)
-    val s2 = s1 bind (PosLoc.dummy, k1)
-    val k2 = Op(Ops.Add1, Nil, Nil, PosLoc.dummy)
-    assert(analyze(parse("(if0 (add1 0) 1 2)")).size === 6)
+  test("analyzing values") {
+    assert(analyze(parse(pri1)).size === 3)
+    assert(analyze(parse(pri2)).size === 3)
+  }
+
+  def ansFilter(s: Set[State]) =
+    s.filter(_ match { case Ans(_, _) => true case _ => false })
+
+  test("analizing if0") {
+    val set0 = analyze(parse("(if0 0 1 2)"))
+    val ans0 = ansFilter(set0)
+    assert(set0.size === 6)
+    assert(ans0.size === 1)
+    val set1 = analyze(parse("(if0 (add1 0) 1 2)"))
+    val ans1 = ansFilter(set1)
+    assert(set1.size === 11)
+    assert(ans1.size === 2)
   }
 
   test("recursion") {
     def fact(n: Int) = "(letrec [(fact (λn.(if0 n 1 (* n (fact (sub1 n))))))] (fact "+n+"))"
-    assert(analyze(parse(fact(0))).size === 10)
-    assert(analyze(parse(fact(1))).size === 154)
-    assert(analyze(parse(fact(10))).size === 154)
+    val set0 = analyze(parse(fact(0)))
+    val ans0 = ansFilter(set0)
+    assert(set0.size === 15)
+    assert(ans0.size === 1)
+    assert(analyze(parse(fact(1))).size === 50)
+    assert(analyze(parse(fact(10))).size === 50)
     // Testing these is a nightmare. The equal sizes for fact(1) and fact(10)
     // is a good sign, though.
 
-    val mutual =
+    def mutual(n: Int) =
       """
 (letrec [(true (λx y.x))
          (false (λx y.y))
@@ -108,9 +118,11 @@ class TestSuite extends FunSuite {
          (not (λx.x false true))
          (evenP (λn.(if0 n true (oddP (- n 1)))))
          (oddP (λn.(if0 n false (evenP (- n 1)))))]
-  (oddP 10))
+  (oddP """+n+"""))
 """
-//    assert(eval(parse(mutual)) === Set(???))
+    assert(analyze(parse(mutual(0))).size === 27)
+    assert(analyze(parse(mutual(1))).size === 82)
+    assert(analyze(parse(mutual(10))).size === 82)
   }
             
 }
